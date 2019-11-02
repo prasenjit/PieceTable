@@ -1,3 +1,8 @@
+__author__ = "Prasenjit Kumar Shaw"
+__copyright__ = "Copyright 2019, Prasenjit Kumar Shaw"
+__license__ = "MIT"
+__email__ = "shawprasenjit7@gmail.com"
+
 class PieceTable:
     def __init__(self, originalContent):
         self.origBuff = originalContent
