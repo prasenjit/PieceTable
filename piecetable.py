@@ -13,7 +13,16 @@ class PieceTable:
                 "length": len(self.origBuff)
             }]
 
-    def getPieceIndex(self, startpos):  # return piece index and offset within this piece
+    def resetBuffers(self):
+        self.origBuff = self.getOutputText()
+        self.addBuff = ''
+        self.table = [{
+                "add": False, # false means it points to origBuff, true means addBuff
+                "startpos": 0,
+                "length": len(self.origBuff)
+            }]
+
+    def __getPieceIndex(self, startpos):  # return piece index and offset within this piece
         offset = startpos
         for piece in self.table:
             if offset <= piece["length"]:
@@ -26,7 +35,7 @@ class PieceTable:
             return
         addBuffOffset = len(self.addBuff)
         self.addBuff += string
-        pieceIndex, buffOffset = self.getPieceIndex(startpos)
+        pieceIndex, buffOffset = self.__getPieceIndex(startpos)
         piece = self.table[pieceIndex]
         if piece["add"] and buffOffset == (piece["startpos"] + piece["length"]) and addBuffOffset == (piece["startpos"] + piece["length"]):
             self.table[pieceIndex]["length"] += len(string)
@@ -62,17 +71,19 @@ class PieceTable:
         if startpos < 0:
             return
         if n_chars < 0:
-            self.delete(startpos + n_chars, -n_chars)
+            return self.delete(startpos + n_chars, -n_chars)
 
-        initPieceIndex, initBuffOffset = self.getPieceIndex(startpos)
-        finalPieceIndex, finalBuffOffset = self.getPieceIndex(startpos + n_chars)
-
+        initPieceIndex, initBuffOffset = self.__getPieceIndex(startpos)
+        finalPieceIndex, finalBuffOffset = self.__getPieceIndex(startpos + n_chars)
+        print("init index: {0}\t\tfinal index: {1}\t\t for deletion".format(initPieceIndex, finalPieceIndex))
         if initPieceIndex == finalPieceIndex:
             if initBuffOffset == self.table[initPieceIndex]["startpos"]:
+                print("Deletion towards start of index {0}".format(initPieceIndex))
                 self.table[initPieceIndex]["startpos"] += n_chars
                 self.table[initPieceIndex]["length"] -= n_chars
                 return
             elif finalBuffOffset == (self.table[initPieceIndex]["startpos"] + self.table[initPieceIndex]["length"]):
+                print("Deletion towards end of index {0}".format(finalPieceIndex))
                 self.table[initPieceIndex]["length"] -= n_chars
                 return
         
@@ -88,7 +99,7 @@ class PieceTable:
         }
 
         for i in range(initPieceIndex, finalPieceIndex + 1):
-            self.table.pop(i)
+            self.table.pop(initPieceIndex)
         if piece2["length"] > 0:
             self.table.insert(initPieceIndex, piece2)
         if piece1["length"] > 0:
@@ -137,12 +148,48 @@ if __name__ == '__main__':
     print("Final Text: {0}".format(table.getOutputText()))
     print()
 
+    print("\n\n\t\t{0}".format(table.getOutputText()[3:3+4]))
     print("Deleting text...")
     table.delete(3, 4)
     table.printPieceTable()
     print("Final Text: {0}".format(table.getOutputText()))
 
+
+    print("\n\n\t\t{0}".format(table.getOutputText()[15-4:15]))
     print("Deleting text...")
     table.delete(15, -4)
     table.printPieceTable()
     print("Final Text: {0}".format(table.getOutputText()))
+
+    print("\n\nResetting Buffers...")
+    table.resetBuffers()
+    table.printPieceTable()
+
+    print("Adding text...")
+    table.insert(" for text editors", len(initString) - 1)
+    table.printPieceTable()
+    print("Final Text: {0}".format(table.getOutputText()))
+    print()
+
+    print("Adding text...")
+    table.insert(" you", 3)
+    table.printPieceTable()
+    print("Final Text: {0}".format(table.getOutputText()))
+    print()
+
+    print("\n\n\t\t{0}".format(table.getOutputText()[3:3+4]))
+    print("Deleting text...")
+    table.delete(3, 4)
+    table.printPieceTable()
+    print("Final Text: {0}".format(table.getOutputText()))
+
+
+    print("\n\n\t\t{0}".format(table.getOutputText()[15-4:15]))
+    print("Deleting text...")
+    table.delete(15, -4)
+    table.printPieceTable()
+    print("Final Text: {0}".format(table.getOutputText()))
+    
+    print("\n\nResetting Buffers...")
+    table.resetBuffers()
+    table.printPieceTable()
