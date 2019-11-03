@@ -305,6 +305,21 @@ def example2():
     print("Final Text: {0}".format(table.getOutputText()))
     print("=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=")
 
+    table.delete(3, 2)
+    table.printPieceTable()
+    print("Final Text: {0}".format(table.getOutputText()))
+    print("=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=")
+
+    table.undo()
+    table.printPieceTable()
+    print("Final Text: {0}".format(table.getOutputText()))
+    print("=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=")
+
+    table.redo()
+    table.printPieceTable()
+    print("Final Text: {0}".format(table.getOutputText()))
+    print("=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=")
+
 
 if __name__ == '__main__':
     # example1()
