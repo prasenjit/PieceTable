@@ -12,7 +12,7 @@ class PieceTable:
                 "startpos": 0,
                 "length": len(self.origBuff)
             }]
-        self.recievedCommands = []
+        self.recivedCommands = []
         self.undoStack = []
         self.redoStack = []
 
@@ -24,9 +24,22 @@ class PieceTable:
                 "startpos": 0,
                 "length": len(self.origBuff)
             }]
-        self.recievedCommands = []
         self.undoStack = []
         self.redoStack = []
+
+    def undo(self):
+        print("XXXXX Command Recieved: undo()")
+        if len(self.undoStack):
+            command = self.undoStack.pop()
+            self.redoStack.append(command)
+            self.table = command["initialTable"]
+            
+    def redo(self):
+        print("XXXXX Command Recieved: redo()")
+        if len(self.redoStack):
+            command = self.redoStack.pop()
+            self.undoStack.append(command)
+            self.table = command["finalTable"]
 
     def __getPieceIndex(self, startpos):  # return piece index and offset within this piece
         offset = startpos
@@ -36,67 +49,17 @@ class PieceTable:
             offset -= piece["length"]
         return 0, 0
 
-    def __convertCommand(self, command):
-        convertedCommand = {}
-        if command["type"] == "insert":
-            convertedCommand["type"] = "delete"
-            startpos = command["args"][1]
-            n_chars = len(command["args"][0])
-            convertedCommand["args"] = [startpos, n_chars]
-        else:
-            convertedCommand["type"] = "insert"
-            string = ''
-            startpos = command["args"][0]
-            convertedCommand["args"] = [string, startpos]
-        return convertedCommand
-        
-    def undo(self):
-        print("XXXXX Recieved Command: undo()")
-        try:
-            command = self.undoStack.pop()
-            self.redoStack.append(command)
-            convertedCommand = self.__convertCommand(command)
-            if convertedCommand["type"] == "insert":
-                self.insert(convertedCommand["args"][0], convertedCommand["args"][1], True)
-            else:
-                self.delete(convertedCommand["args"][0], convertedCommand["args"][1], True)
-            # self.undoStack.pop()
-        except:
-            return
+    def insert(self, string, startpos):
+        print("XXXXX Command Recieved: insert({0}, {1})".format(string, startpos))
 
-    def redo(self):
-        print("XXXXX Recieved Command: redo()")
-        try:
-            command = self.redoStack.pop()
-            self.undoStack.append(command)
-            convertedCommand = command
-            if convertedCommand["type"] == "insert":
-                self.insert(convertedCommand["args"][0], convertedCommand["args"][1], True)
-            else:
-                self.delete(convertedCommand["args"][0], convertedCommand["args"][1], True)
-            # self.redoStack.pop()
-        except:
-            return
-
-
-    def insert(self, string, startpos, internalCall=False):
-        print("XXXXX Recieved Command: insert({0}, {1})".format(string, startpos))
-        command = {
-            "type": "insert",
-            "args" : [string, startpos]
-        }
-        self.recievedCommands.append(command)
-        if not internalCall:
-            self.undoStack.append(command)
+        initialTable = []
+        for piece in self.table:
+            initialTable.append(piece)
 
         if len(string) == 0:
             return
-
-        if internalCall:
-            addBuffOffset = self.addBuff.find(string)
-        else:
-            addBuffOffset = len(self.addBuff)
-            self.addBuff += string
+        addBuffOffset = len(self.addBuff)
+        self.addBuff += string
         pieceIndex, buffOffset = self.__getPieceIndex(startpos)
         piece = self.table[pieceIndex]
         if piece["add"] and buffOffset == (piece["startpos"] + piece["length"]) and addBuffOffset == (piece["startpos"] + piece["length"]):
@@ -127,7 +90,19 @@ class PieceTable:
         if piece1["length"] > 0:
             self.table.insert(pieceIndex, piece1)
 
-    def delete(self, startpos, n_chars, internalCall=False):
+        finalTable = []
+        for piece in self.table:
+            finalTable.append(piece)
+
+        command = {
+            "type": "insert",
+            "initialTable": initialTable,
+            "finalTable": finalTable
+        }
+
+        self.undoStack.append(command)
+
+    def delete(self, startpos, n_chars):
         if n_chars == 0:
             return
         if startpos < 0:
@@ -135,15 +110,11 @@ class PieceTable:
         if n_chars < 0:
             return self.delete(startpos + n_chars, -n_chars)
 
-        if n_chars > 0:
-            print("XXXXX Received Command: delete({0}, {1})".format(startpos, n_chars))
-            command = {
-                "type": "delete",
-                "args" : [startpos, n_chars]
-            }
-            self.recievedCommands.append(command)
-            if not internalCall:
-                self.undoStack.append(command)
+        print("XXXXX Command Recieved: delete({0}, {1})".format(startpos, n_chars))
+
+        initialTable = []
+        for piece in self.table:
+            initialTable.append(piece)
 
         initPieceIndex, initBuffOffset = self.__getPieceIndex(startpos)
         finalPieceIndex, finalBuffOffset = self.__getPieceIndex(startpos + n_chars)
@@ -177,6 +148,18 @@ class PieceTable:
         if piece1["length"] > 0:
             self.table.insert(initPieceIndex, piece1)
 
+        finalTable = []
+        for piece in self.table:
+            finalTable.append(piece)
+
+        command = {
+            "type": "delete",
+            "initialTable": initialTable,
+            "finalTable": finalTable
+        }
+
+        self.undoStack.append(command)
+
     
     def getOutputText(self):
         finalText = ''
@@ -197,18 +180,15 @@ class PieceTable:
                 piece["add"], piece["startpos"], piece["length"]
             ))
 
-        print("::: Command Stack :::")
-        for command in self.recievedCommands:
-            print("\t{0}".format(command))
-
         print("::: Undo Stack :::")
         for command in self.undoStack:
-            print("\t{0}".format(command))
+            print("\t{0}".format(command["type"]))
 
         print("::: Redo Stack :::")
         for command in self.redoStack:
-            print("\t{0}".format(command))
+            print("\t{0}".format(command["type"]))
         print("====================")
+
 
 
 def example1():
@@ -318,6 +298,11 @@ def example2():
     table.redo()
     table.printPieceTable()
     print("Final Text: {0}".format(table.getOutputText()))
+    print("=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=")
+
+    print("\n\nResetting Buffers...")
+    table.resetBuffers()
+    table.printPieceTable()
     print("=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=")
 
 
